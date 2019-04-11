@@ -19,19 +19,68 @@
 
 #include <SPI.h>
 #include <Ethernet.h>
+#include "IP6Address.h"
 
 // Enter a MAC address and IP address for your controller below.
-// The IP address will be dependent on your local network:
+// The IP address will be dependent on your local network.
+// gateway and subnet are optional:
+
 byte mac[] = {
-  0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED
+0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
+
+byte ip6_lla[] = {
+0xfe, 0x80, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00,
+0x02, 0x00, 0xdc, 0xff,
+0xfe, 0x57, 0x57, 0x61
 };
-IPAddress ip(192, 168, 1, 177);
+
+byte ip6_gua[] = {
+0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00
+};
+
+byte ip6_sn6[] = {
+0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00
+};
+
+byte ip6_gw6[] = {
+0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00
+};
+
+// https://developers.google.com/speed/public-dns/docs/using
+// 2001:4860:4860::8888
+// 2001:4860:4860::8844
+
+byte ip6_dns6[] = {
+0x20, 0x01, 0x48, 0x60,
+0x48, 0x60, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x88, 0x88
+};
+
+IP6Address ip(192, 168, 0, 4);
+IP6Address myDns(192, 168, 0, 1);
+IP6Address gateway(192, 168, 0, 1);
+IP6Address subnet(255, 255, 0, 0);
+
+IP6Address lla(ip6_lla, 16);
+IP6Address gua(ip6_gua, 16);
+IP6Address sn6(ip6_sn6, 16);
+IP6Address gw6(ip6_gw6, 16);
 
 // Initialize the Ethernet server library
 // with the IP address and port you want to use
 // (port 80 is default for HTTP):
 EthernetServer server(80);
-
 void setup() {
   // You can use Ethernet.init(pin) to configure the CS pin
   //Ethernet.init(10);  // Most Arduino shields
@@ -49,8 +98,8 @@ void setup() {
   Serial.println("Ethernet WebServer Example");
 
   // start the Ethernet connection and the server:
-  Ethernet.begin(mac, ip);
-
+  Ethernet.begin(mac);
+  
   // Check for Ethernet hardware present
   if (Ethernet.hardwareStatus() == EthernetNoHardware) {
     Serial.println("Ethernet shield was not found.  Sorry, can't run without hardware. :(");
@@ -62,12 +111,24 @@ void setup() {
     Serial.println("Ethernet cable is not connected.");
   }
 
-  // start the server
-  server.begin();
-  Serial.print("server is at ");
-  Serial.println(Ethernet.localIP());
-}
+  Serial.println("==================================================================");
+  Serial.println("Network Information");
+  Serial.println("==================================================================");
+  Serial.print("IPv4 ADR: "); Serial.println(Ethernet.localIP());
+  Serial.print("IPv6 LLA: "); Serial.println(Ethernet.linklocalAddress());
+  Serial.print("IPv6 GUA: "); Serial.println(Ethernet.globalunicastAddress());
+  Serial.print("IPv6 GAW: "); Serial.println(Ethernet.gateway6());
+  Serial.print("IPv6 SUB: "); Serial.println(Ethernet.subnetmask6());
+  Serial.print("IPv6 DNS: "); Serial.println(Ethernet.dnsServerIP());
+  Serial.println("==================================================================");
 
+  // start the server dual stack
+  server.begin(1);
+  Serial.println("Web Server address:");
+  Serial.print("IPv4 ADR: "); Serial.println(Ethernet.localIP());
+  Serial.print("IPv6 LLA: "); Serial.println(Ethernet.linklocalAddress());
+  Serial.print("IPv6 GUA: "); Serial.println(Ethernet.globalunicastAddress());
+}
 
 void loop() {
   // listen for incoming clients

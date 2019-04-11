@@ -19,9 +19,56 @@
 // Enter a MAC address and IP address for your controller below.
 // The IP address will be dependent on your local network:
 byte mac[] = {
-  0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED
+0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
+
+byte ip6_lla[] = {
+0xfe, 0x80, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00,
+0x02, 0x00, 0xdc, 0xff,
+0xfe, 0x57, 0x57, 0x61
 };
-IPAddress ip(192, 168, 1, 177);
+
+byte ip6_gua[] = {
+0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00
+};
+
+byte ip6_sn6[] = {
+0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00
+};
+
+byte ip6_gw6[] = {
+0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00
+};
+
+// https://developers.google.com/speed/public-dns/docs/using
+// 2001:4860:4860::8888
+// 2001:4860:4860::8844
+
+byte ip6_dns6[] = {
+0x20, 0x01, 0x48, 0x60,
+0x48, 0x60, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x88, 0x88
+};
+
+IP6Address ip(192, 168, 0, 4);
+IP6Address myDns(192, 168, 0, 1);
+IP6Address gateway(192, 168, 0, 1);
+IP6Address subnet(255, 255, 0, 0);
+
+IP6Address lla(ip6_lla, 16);
+IP6Address gua(ip6_gua, 16);
+IP6Address sn6(ip6_sn6, 16);
+IP6Address gw6(ip6_gw6, 16);
 
 unsigned int localPort = 8888;      // local port to listen on
 
@@ -42,7 +89,7 @@ void setup() {
   //Ethernet.init(33);  // ESP32 with Adafruit Featherwing Ethernet
 
   // start the Ethernet
-  Ethernet.begin(mac, ip);
+  Ethernet.begin(mac);
 
   // Open serial communications and wait for port to open:
   Serial.begin(9600);
@@ -61,8 +108,23 @@ void setup() {
     Serial.println("Ethernet cable is not connected.");
   }
 
+  Serial.println("==================================================================");
+  Serial.println("Network Information");
+  Serial.println("==================================================================");
+  Serial.print("IPv4 ADR: "); Serial.println(Ethernet.localIP());
+  Serial.print("IPv6 LLA: "); Serial.println(Ethernet.linklocalAddress());
+  Serial.print("IPv6 GUA: "); Serial.println(Ethernet.globalunicastAddress());
+  Serial.print("IPv6 GAW: "); Serial.println(Ethernet.gateway6());
+  Serial.print("IPv6 SUB: "); Serial.println(Ethernet.subnetmask6());
+  Serial.print("IPv6 DNS: "); Serial.println(Ethernet.dnsServerIP());
+  Serial.println("==================================================================");
+
   // start UDP
   Udp.begin(localPort);
+  
+  Serial.println("UDPSendReceiveString address:");
+  Serial.print("IPv6 LLA: "); Serial.println(Ethernet.linklocalAddress());
+  Serial.print("IPv6 GUA: "); Serial.println(Ethernet.globalunicastAddress());
 }
 
 void loop() {
@@ -72,13 +134,8 @@ void loop() {
     Serial.print("Received packet of size ");
     Serial.println(packetSize);
     Serial.print("From ");
-    IPAddress remote = Udp.remoteIP();
-    for (int i=0; i < 4; i++) {
-      Serial.print(remote[i], DEC);
-      if (i < 3) {
-        Serial.print(".");
-      }
-    }
+    IP6Address remote = Udp.remoteIP();
+    Serial.print(remote);
     Serial.print(", port ");
     Serial.println(Udp.remotePort());
 

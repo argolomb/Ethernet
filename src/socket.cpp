@@ -124,7 +124,7 @@ makesocket:
 }
 
 // multicast version to set fields before open  thd
-uint8_t EthernetClass::socketBeginMulticast(uint8_t protocol, IPAddress ip, uint16_t port)
+uint8_t EthernetClass::socketBeginMulticast(uint8_t protocol, IP6Address ip, uint16_t port)
 {
 	uint8_t s, status[MAX_SOCK_NUM], chip, maxindex=MAX_SOCK_NUM;
 
@@ -236,9 +236,9 @@ void EthernetClass::socketConnect(uint8_t s, uint8_t * addr, uint16_t port)
 {
 	// set destination IP
 	SPI.beginTransaction(SPI_ETHERNET_SETTINGS);
-	W5100.writeSnDIPR(s, addr);
+	W5100.writeSnDIP6R(s, addr);
 	W5100.writeSnDPORT(s, port);
-	W5100.execCmdSn(s, Sock_CONNECT);
+	W5100.execCmdSn(s, Sock_CONNECT6);
 	SPI.endTransaction();
 }
 
@@ -498,13 +498,33 @@ uint16_t EthernetClass::socketBufferData(uint8_t s, uint16_t offset, const uint8
 
 bool EthernetClass::socketStartUDP(uint8_t s, uint8_t* addr, uint16_t port)
 {
-	if ( ((addr[0] == 0x00) && (addr[1] == 0x00) && (addr[2] == 0x00) && (addr[3] == 0x00)) ||
-	  ((port == 0x00)) ) {
+	uint8_t i;
+	uint32_t check_addr;
+	
+	for(i=0, check_addr=0; i<16; i++) {
+		check_addr += addr[i];
+	}
+
+	if(check_addr == 0x00 || (port == 0x00)) {
 		return false;
 	}
+	
 	SPI.beginTransaction(SPI_ETHERNET_SETTINGS);
-	W5100.writeSnDIPR(s, addr);
+	W5100.writeSnDIP6R(s, addr);
 	W5100.writeSnDPORT(s, port);
+#if 1
+	// 20190410
+	// Taylor
+	// Hop limit 0x80 / 128 as default
+	// If Hop limit too short, DNS Query Time Limited
+	W5100.writeSnTTL(s, 0x80);
+#else
+	// 20190319
+	// Taylor
+	// Hop limit 0x01
+	// Should be 0x01 ? Any case?
+	W5100.writeSnTTL(s, 0x01);
+#endif
 	SPI.endTransaction();
 	return true;
 }
@@ -512,7 +532,7 @@ bool EthernetClass::socketStartUDP(uint8_t s, uint8_t* addr, uint16_t port)
 bool EthernetClass::socketSendUDP(uint8_t s)
 {
 	SPI.beginTransaction(SPI_ETHERNET_SETTINGS);
-	W5100.execCmdSn(s, Sock_SEND);
+	W5100.execCmdSn(s, Sock_SEND6);
 
 	/* +2008.01 bj */
 	while ( (W5100.readSnIR(s) & SnIR::SEND_OK) != SnIR::SEND_OK ) {

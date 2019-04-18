@@ -301,7 +301,7 @@ uint8_t AddressAutoConfig::Address_Auto_RSRA(uint8_t sn, uint8_t *icmpbuf, uint1
 					for (int i = 0; i < prefix_len / 8; i++)
 					{
 						prefix[i] = *p++;
-						subnet[i] = prefix[i];
+						subnet[i] = 0xff;
 					}
 					W5100.writeGUAR(prefix);
 					W5100.writeSUB6R(subnet);

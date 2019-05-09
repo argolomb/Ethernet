@@ -91,9 +91,9 @@ static uint8_t data_buf[2048] = {
 	0,
 };
 
-uint8_t AddressAutoConfig::Address_Auto_Configuration(uint8_t sn)
+int8_t AddressAutoConfig::Address_Auto_Configuration(uint8_t sn)
 {
-	uint8_t result;
+	int8_t result;
 
 	// RS(Router Solicitation) RA(Router Advertisement)
 
@@ -102,9 +102,9 @@ uint8_t AddressAutoConfig::Address_Auto_Configuration(uint8_t sn)
 	return result;
 }
 
-uint8_t AddressAutoConfig::Address_Auto_RSRA(uint8_t sn, uint8_t *icmpbuf, uint16_t buf_size)
+int8_t AddressAutoConfig::Address_Auto_RSRA(uint8_t sn, uint8_t *icmpbuf, uint16_t buf_size)
 {
-	uint8_t result;
+	int8_t result;
 	uint8_t ra_cnt = 2; // Set Default Router Counter 2
 	uint16_t escape_cnt = 1000000;
 

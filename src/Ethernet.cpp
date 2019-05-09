@@ -41,7 +41,7 @@ int EthernetClass::begin(uint8_t *mac, unsigned long timeout, unsigned long resp
 	_dhcp = &s_dhcp;
 	_addressautoconfig = &s_addressautoconfig;
 
-	uint8_t result;
+	int8_t result;
 
 	// Initialise the basic info
 	if (W5100.init() == 0) return 0;
@@ -50,77 +50,81 @@ int EthernetClass::begin(uint8_t *mac, unsigned long timeout, unsigned long resp
 	W5100.setIPAddress(IPAddress(0,0,0,0).raw_address());
 
 	// Set IPv6
+	if (Ethernet.linkStatus() == LinkON) {
 
-	// Duplicate_Address_Detection
-	_addressautoconfig->Duplicate_Address_Detection(mac);
+		// Duplicate_Address_Detection
+		_addressautoconfig->Duplicate_Address_Detection(mac);
 
-	// Address Auto Configuration
-	// RA -> DHCP
+		// Address Auto Configuration
+		// RA -> DHCP
 
-	// Use Socket Number 7
-	Serial.println("Address_Auto_Configuration Start");
-	result = _addressautoconfig->Address_Auto_Configuration(7);
-	SPI.endTransaction();
+		// Use Socket Number 7
+		Serial.println("Address_Auto_Configuration Start");
+		result = _addressautoconfig->Address_Auto_Configuration(7);
+		SPI.endTransaction();
 
-	if(result == AAC_SLAAC_RDNSS) {
-		// Completed
+		if(result == AAC_SLAAC_RDNSS) {
+			// Completed
 
-		Serial.println("Address_Auto_Configuration Succeed");
-		_dhcp->use_sateful = 0;
-		return 1;
+			Serial.println("Address_Auto_Configuration Succeed");
+			_dhcp->use_sateful = 0;
+			return 1;
 
-	} else if(result == AAC_SLAAC_DHCP6) {
-		// Need Stateless DHCP
-		// Get Other Information
+		} else if(result == AAC_SLAAC_DHCP6) {
+			// Need Stateless DHCP
+			// Get Other Information
 
-		_dhcp->use_sateful = 0;
+			_dhcp->use_sateful = 0;
 
-		Serial.println("Address_Auto_Configuration Failed");
-		Serial.println("beginWithDHCP Stateless DHCP Start");
+			Serial.println("Address_Auto_Configuration Failed");
+			Serial.println("beginWithDHCP Stateless DHCP Start");
 
-		int ret = _dhcp->beginWithDHCPV6(mac, timeout, responseTimeout);
+			int ret = _dhcp->beginWithDHCPV6(mac, timeout, responseTimeout);
 
-		if (ret == 1) {
-			// We've successfully found a DHCP server and got our configuration
-			// info, so set things accordingly
+			if (ret == 1) {
+				// We've successfully found a DHCP server and got our configuration
+				// info, so set things accordingly
 
-			Serial.println("beginWithDHCP Stateless DHCP Succeed");
-			return ret;
-		} else {
+				Serial.println("beginWithDHCP Stateless DHCP Succeed");
+				return ret;
+			} else {
 
-			Serial.println("beginWithDHCP Stateless DHCP Failed");
-			return 0;
+				Serial.println("beginWithDHCP Stateless DHCP Failed");
+				return 0;
+			}
+
+		} else if(result == AAC_SFAAC_DHCP6) {
+			// Need Stateful DHCP
+			// Get Managed Information
+
+			_dhcp->use_sateful = 1;
+
+			Serial.println("Address_Auto_Configuration Failed");
+			Serial.println("beginWithDHCP Stateful DHCP Start");
+
+			int ret = _dhcp->beginWithDHCPV6(mac, timeout, responseTimeout);
+
+			if (ret == 1) {
+				// We've successfully found a DHCP server and got our configuration
+				// info, so set things accordingly
+
+				Serial.println("beginWithDHCP Stateful DHCP Succeed");
+
+				SPI.beginTransaction(SPI_ETHERNET_SETTINGS);
+				W5100.setGlobalunicastAddress(_dhcp->getGua().raw_address());
+				SPI.endTransaction();
+				socketPortRand(micros());
+				return ret;
+			} else {
+
+				Serial.println("beginWithDHCP Stateful DHCP Failed");
+				return 0;
+			}
+
 		}
+    }
 
-	} else if(result == AAC_SFAAC_DHCP6) {
-		// Need Stateful DHCP
-		// Get Managed Information
-
-		_dhcp->use_sateful = 1;
-
-		Serial.println("Address_Auto_Configuration Failed");
-		Serial.println("beginWithDHCP Stateful DHCP Start");
-
-		int ret = _dhcp->beginWithDHCPV6(mac, timeout, responseTimeout);
-
-		if (ret == 1) {
-			// We've successfully found a DHCP server and got our configuration
-			// info, so set things accordingly
-
-			Serial.println("beginWithDHCP Stateful DHCP Succeed");
-
-			SPI.beginTransaction(SPI_ETHERNET_SETTINGS);
-			W5100.setGlobalunicastAddress(_dhcp->getGua().raw_address());
-			SPI.endTransaction();
-			socketPortRand(micros());
-			return ret;
-		} else {
-
-			Serial.println("beginWithDHCP Stateful DHCP Failed");
-			return 0;
-		}
-
-	}
+	return 0;
 
 }
 

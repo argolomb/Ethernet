@@ -538,8 +538,8 @@ class AddressAutoConfig {
 public:
 
 	// Address Auto Config
-    uint8_t Address_Auto_Configuration(uint8_t sn);
-    uint8_t Address_Auto_RSRA(uint8_t sn, uint8_t *icmpbuf, uint16_t buf_size);
+    int8_t Address_Auto_Configuration(uint8_t sn);
+    int8_t Address_Auto_RSRA(uint8_t sn, uint8_t *icmpbuf, uint16_t buf_size);
 
     void Generate_EUI64(uint8_t *mac_addr, uint8_t *Link_Local_Addr);
     uint8_t Duplicate_Address_Detection(uint8_t *mac_addr);

@@ -134,7 +134,7 @@ int8_t AddressAutoConfig::Address_Auto_RSRA(uint8_t sn, uint8_t *icmpbuf, uint16
 		return result;
 	}
 
-	sn = Ethernet.socketBegin(SnMR::IPRAW6, 1024);
+	sn = Ethernet2.socketBegin(SnMR::IPRAW6, 1024);
 
 	// Packet Send
 	W5100.writeICMP6BLKR(W6100_ICMP6BLK_RA);
@@ -160,16 +160,16 @@ int8_t AddressAutoConfig::Address_Auto_RSRA(uint8_t sn, uint8_t *icmpbuf, uint16
 				uint16_t pack_len = 0;
 
 				// Read Peer's ver, data lenth
-				size = Ethernet.socketRecv(sn, head, 2);
+				size = Ethernet2.socketRecv(sn, head, 2);
 				head[0] &= 0x07;
 				pack_len = (uint16_t)(head[0] << 8) + head[1];
 				size_rsr -= size;
 
 				// Read Peer's IP address, port number
-				size = Ethernet.socketRecv(sn, destip, 16);
+				size = Ethernet2.socketRecv(sn, destip, 16);
 				size_rsr -= size;
 
-				size = Ethernet.socketRecv(sn, icmpbuf, size_rsr);
+				size = Ethernet2.socketRecv(sn, icmpbuf, size_rsr);
 				size_rsr -= size;
 
 				W5100.writeGA6R(destip);
@@ -188,7 +188,7 @@ int8_t AddressAutoConfig::Address_Auto_RSRA(uint8_t sn, uint8_t *icmpbuf, uint16
 				if (*p != AAC_ROUTER_ADVERTISEMENT)
 				{
 					// Not Recived RA
-					Ethernet.socketClose(sn);
+					Ethernet2.socketClose(sn);
 					return result;
 				}
 			}
@@ -471,7 +471,7 @@ int8_t AddressAutoConfig::Address_Auto_RSRA(uint8_t sn, uint8_t *icmpbuf, uint16
 		}
 	}
 
-	Ethernet.socketClose(sn);
+	Ethernet2.socketClose(sn);
 
 	return result;
 }

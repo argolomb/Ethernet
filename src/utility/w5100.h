@@ -64,7 +64,7 @@ public:
   static const uint8_t TCP6   = 0x29;
   static const uint8_t UDP6   = 0x0A;
   static const uint8_t IPRAW6 = 0x0B;
-  static const uint8_t TCPD   = 0x0D;
+  static const uint8_t TCPD   = 0x2D;
   static const uint8_t UDPD   = 0x0E;
 };
 

@@ -28,16 +28,70 @@ byte mac[] = {
   0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED
 };
 
+byte ip6_lla[] = {
+0xfe, 0x80, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00,
+0x02, 0x00, 0xdc, 0xff,
+0xfe, 0x57, 0x57, 0x61
+};
+
+byte ip6_gua[] = {
+0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00
+};
+
+byte ip6_sn6[] = {
+0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00
+};
+
+byte ip6_gw6[] = {
+0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00
+};
+
+// https://developers.google.com/speed/public-dns/docs/using
+// 2001:4860:4860::8888
+// 2001:4860:4860::8844
+
+byte ip6_dns6[] = {
+0x20, 0x01, 0x48, 0x60,
+0x48, 0x60, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x88, 0x88
+};
+
 unsigned int localPort = 8888;       // local port to listen for UDP packets
 
+#if 0
 const char timeServer[] = "time.nist.gov"; // time.nist.gov NTP server
+#else
+const char timeServer[] = "time.google.com"; // time.google.com NTP server
+#endif
 
 const int NTP_PACKET_SIZE = 48; // NTP time stamp is in the first 48 bytes of the message
 
 byte packetBuffer[NTP_PACKET_SIZE]; //buffer to hold incoming and outgoing packets
 
 // A UDP instance to let us send and receive packets over UDP
-EthernetUDP Udp;
+EthernetUDPv6 Udp;
+
+// ntp.rhrk.uni-kl.de
+// 2001:638:208:1::116
+byte ip6_ntp[] = {
+0x20, 0x01, 0x06, 0x38,
+0x02, 0x08, 0x00, 0x01,
+0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x01, 0x16
+};
+
+IP6Address ntp(ip6_ntp, 16);
 
 void setup() {
   // You can use Ethernet.init(pin) to configure the CS pin
@@ -55,12 +109,12 @@ void setup() {
   }
 
   // start Ethernet and UDP
-  if (Ethernet.begin(mac) == 0) {
+  if (Ethernetv6.begin(mac) == 0) {
     Serial.println("Failed to configure Ethernet using DHCP");
     // Check for Ethernet hardware present
-    if (Ethernet.hardwareStatus() == EthernetNoHardware) {
+    if (Ethernetv6.hardwareStatus() == EthernetNoHardware) {
       Serial.println("Ethernet shield was not found.  Sorry, can't run without hardware. :(");
-    } else if (Ethernet.linkStatus() == LinkOFF) {
+    } else if (Ethernetv6.linkStatus() == LinkOFF) {
       Serial.println("Ethernet cable is not connected.");
     }
     // no point in carrying on, so do nothing forevermore:
@@ -68,6 +122,22 @@ void setup() {
       delay(1);
     }
   }
+  
+  // print your local IP address:
+  Serial.println("==================================================================");
+  Serial.println("Network Information");
+  Serial.println("==================================================================");
+  Serial.print("IPv4 ADR: "); Serial.println(Ethernetv6.localIP());
+  Serial.print("IPv6 LLA: "); Serial.println(Ethernetv6.linklocalAddress());
+  Serial.print("IPv6 GUA: "); Serial.println(Ethernetv6.globalunicastAddress());
+  Serial.print("IPv6 GAW: "); Serial.println(Ethernetv6.gateway6());
+  Serial.print("IPv6 SUB: "); Serial.println(Ethernetv6.subnetmask6());
+  Serial.print("IPv6 DNS: "); Serial.println(Ethernetv6.dnsServerIP());
+  Serial.println("==================================================================");
+
+  Ethernetv6.setDnsServerIP(ip6_dns6);
+  Serial.print("IPv6 DNS: "); Serial.println(Ethernetv6.dnsServerIP());
+
   Udp.begin(localPort);
 }
 
@@ -119,7 +189,7 @@ void loop() {
   }
   // wait ten seconds before asking for the time again
   delay(10000);
-  Ethernet.maintain();
+  Ethernetv6.maintain();
 }
 
 // send an NTP request to the time server at the given address

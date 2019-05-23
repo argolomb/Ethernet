@@ -25,6 +25,11 @@ byte mac[] = {
   0x00, 0xAA, 0xBB, 0xCC, 0xDE, 0x02
 };
 
+IP6Address ip(192, 168, 0, 4);
+IP6Address myDns(192, 168, 0, 1);
+IP6Address gateway(192, 168, 0, 1);
+IP6Address subnet(255, 255, 0, 0);
+
 void setup() {
   // You can use Ethernet.init(pin) to configure the CS pin
   //Ethernet.init(10);  // Most Arduino shields
@@ -42,11 +47,12 @@ void setup() {
 
   // start the Ethernet connection:
   Serial.println("Initialize Ethernet with DHCP:");
-  if (Ethernet.begin(mac) == 0) {
+  if (Ethernetv6.begin(mac) == 0) {
+    Serial.println("AddressAutoConfig Failed");
     Serial.println("Failed to configure Ethernet using DHCP");
-    if (Ethernet.hardwareStatus() == EthernetNoHardware) {
+    if (Ethernetv6.hardwareStatus() == EthernetNoHardware) {
       Serial.println("Ethernet shield was not found.  Sorry, can't run without hardware. :(");
-    } else if (Ethernet.linkStatus() == LinkOFF) {
+    } else if (Ethernetv6.linkStatus() == LinkOFF) {
       Serial.println("Ethernet cable is not connected.");
     }
     // no point in carrying on, so do nothing forevermore:
@@ -54,13 +60,24 @@ void setup() {
       delay(1);
     }
   }
+
+  Serial.println("==================================================================");
+  Serial.println("Network Information");
+  Serial.println("==================================================================");
+  Serial.print("IPv4 ADR: "); Serial.println(Ethernetv6.localIP());
+  Serial.print("IPv6 LLA: "); Serial.println(Ethernetv6.linklocalAddress());
+  Serial.print("IPv6 GUA: "); Serial.println(Ethernetv6.globalunicastAddress());
+  Serial.print("IPv6 GAW: "); Serial.println(Ethernetv6.gateway6());
+  Serial.print("IPv6 SUB: "); Serial.println(Ethernetv6.subnetmask6());
+  Serial.print("IPv6 DNS: "); Serial.println(Ethernetv6.dnsServerIP());
+  Serial.println("==================================================================");
+
   // print your local IP address:
-  Serial.print("My IP address: ");
-  Serial.println(Ethernet.localIP());
+  Serial.print("IPv6 GUA: "); Serial.println(Ethernetv6.globalunicastAddress());
 }
 
 void loop() {
-  switch (Ethernet.maintain()) {
+  switch (Ethernetv6.maintain()) {
     case 1:
       //renewed fail
       Serial.println("Error: renewed fail");
@@ -70,8 +87,15 @@ void loop() {
       //renewed success
       Serial.println("Renewed success");
       //print your local IP address:
-      Serial.print("My IP address: ");
-      Serial.println(Ethernet.localIP());
+      Serial.println("My IP address: ");
+      Serial.print("LLA:");
+      Serial.println(Ethernetv6.linklocalAddress());
+      
+      Serial.print("GUA:");
+      Serial.println(Ethernetv6.globalunicastAddress());
+
+      Serial.print("IPv4:");
+      Serial.println(Ethernetv6.localIP());
       break;
 
     case 3:
@@ -83,8 +107,15 @@ void loop() {
       //rebind success
       Serial.println("Rebind success");
       //print your local IP address:
-      Serial.print("My IP address: ");
-      Serial.println(Ethernet.localIP());
+      Serial.println("My IP address: ");
+      Serial.print("LLA:");
+      Serial.println(Ethernetv6.linklocalAddress());
+      
+      Serial.print("GUA:");
+      Serial.println(Ethernetv6.globalunicastAddress());
+
+      Serial.print("IPv4:");
+      Serial.println(Ethernetv6.localIP());
       break;
 
     default:

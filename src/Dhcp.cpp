@@ -1,5 +1,3 @@
-#if 0
-
 // DHCP Library v0.3 - April 25, 2009
 // Author: Jordan Terrell - blog.jordanterrell.com
 
@@ -41,7 +39,7 @@ int DhcpClass::request_DHCP_lease()
 	_dhcpInitialTransactionId = _dhcpTransactionId;
 
 	_dhcpUdpSocket.stop();
-	if (_dhcpUdpSocket.begin(DHCP_CLIENT_PORT, 1) == 0) {
+	if (_dhcpUdpSocket.begin(DHCP_CLIENT_PORT) == 0) {
 		// Couldn't get a socket
 		return 0;
 	}
@@ -122,7 +120,7 @@ void DhcpClass::send_DHCP_MESSAGE(uint8_t messageType, uint16_t secondsElapsed)
 {
 	uint8_t buffer[32];
 	memset(buffer, 0, 32);
-	IP6Address dest_addr(255, 255, 255, 255); // Broadcast address
+	IPAddress dest_addr(255, 255, 255, 255); // Broadcast address
 
 	if (_dhcpUdpSocket.beginPacket(dest_addr, DHCP_SERVER_PORT) == -1) {
 		//Serial.printf("DHCP transmit error\n");
@@ -299,8 +297,8 @@ uint8_t DhcpClass::parseDHCPResponse(unsigned long responseTimeout, uint32_t& tr
 
 			case dhcpServerIdentifier :
 				opt_len = _dhcpUdpSocket.read();
-				if ( IP6Address(_dhcpDhcpServerIp) == IP6Address((uint32_t)0) ||
-				  IP6Address(_dhcpDhcpServerIp) == _dhcpUdpSocket.remoteIP() ) {
+				if ( IPAddress(_dhcpDhcpServerIp) == IPAddress((uint32_t)0) ||
+				  IPAddress(_dhcpDhcpServerIp) == _dhcpUdpSocket.remoteIP() ) {
 					_dhcpUdpSocket.read(_dhcpDhcpServerIp, sizeof(_dhcpDhcpServerIp));
 				} else {
 					// Skip over the rest of this option
@@ -397,29 +395,29 @@ int DhcpClass::checkLease()
 	return rc;
 }
 
-IP6Address DhcpClass::getLocalIp()
+IPAddress DhcpClass::getLocalIp()
 {
-	return IP6Address(_dhcpLocalIp);
+	return IPAddress(_dhcpLocalIp);
 }
 
-IP6Address DhcpClass::getSubnetMask()
+IPAddress DhcpClass::getSubnetMask()
 {
-	return IP6Address(_dhcpSubnetMask);
+	return IPAddress(_dhcpSubnetMask);
 }
 
-IP6Address DhcpClass::getGatewayIp()
+IPAddress DhcpClass::getGatewayIp()
 {
-	return IP6Address(_dhcpGatewayIp);
+	return IPAddress(_dhcpGatewayIp);
 }
 
-IP6Address DhcpClass::getDhcpServerIp()
+IPAddress DhcpClass::getDhcpServerIp()
 {
-	return IP6Address(_dhcpDhcpServerIp);
+	return IPAddress(_dhcpDhcpServerIp);
 }
 
-IP6Address DhcpClass::getDnsServerIp()
+IPAddress DhcpClass::getDnsServerIp()
 {
-	return IP6Address(_dhcpDnsServerIp);
+	return IPAddress(_dhcpDnsServerIp);
 }
 
 void DhcpClass::printByte(char * buf, uint8_t n )
@@ -433,5 +431,3 @@ void DhcpClass::printByte(char * buf, uint8_t n )
 		*str-- = c < 10 ? c + '0' : c + 'A' - 10;
 	} while(n);
 }
-
-#endif

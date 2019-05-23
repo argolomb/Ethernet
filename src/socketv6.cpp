@@ -53,14 +53,14 @@ static void read_data(uint8_t s, uint16_t src, uint8_t *dst, uint16_t len);
 /*****************************************/
 
 
-void EthernetClass::socketPortRand(uint16_t n)
+void EthernetClassv6::socketPortRand(uint16_t n)
 {
 	n &= 0x3FFF;
 	local_port ^= n;
 	//Serial.printf("socketPortRand %d, srcport=%d\n", n, local_port);
 }
 
-uint8_t EthernetClass::socketBegin(uint8_t protocol, uint16_t port)
+uint8_t EthernetClassv6::socketBegin(uint8_t protocol, uint16_t port)
 {
 	uint8_t s, status[MAX_SOCK_NUM], chip, maxindex=MAX_SOCK_NUM;
 
@@ -124,7 +124,7 @@ makesocket:
 }
 
 // multicast version to set fields before open  thd
-uint8_t EthernetClass::socketBeginMulticast(uint8_t protocol, IPAddress ip, uint16_t port)
+uint8_t EthernetClassv6::socketBeginMulticast(uint8_t protocol, IP6Address ip, uint16_t port)
 {
 	uint8_t s, status[MAX_SOCK_NUM], chip, maxindex=MAX_SOCK_NUM;
 
@@ -196,7 +196,7 @@ makesocket:
 }
 // Return the socket's status
 //
-uint8_t EthernetClass::socketStatus(uint8_t s)
+uint8_t EthernetClassv6::socketStatus(uint8_t s)
 {
 	SPI.beginTransaction(SPI_ETHERNET_SETTINGS);
 	uint8_t status = W5100.readSnSR(s);
@@ -207,7 +207,7 @@ uint8_t EthernetClass::socketStatus(uint8_t s)
 // Immediately close.  If a TCP connection is established, the
 // remote host is left unaware we closed.
 //
-void EthernetClass::socketClose(uint8_t s)
+void EthernetClassv6::socketClose(uint8_t s)
 {
 	SPI.beginTransaction(SPI_ETHERNET_SETTINGS);
 	W5100.execCmdSn(s, Sock_CLOSE);
@@ -217,7 +217,7 @@ void EthernetClass::socketClose(uint8_t s)
 
 // Place the socket in listening (server) mode
 //
-uint8_t EthernetClass::socketListen(uint8_t s)
+uint8_t EthernetClassv6::socketListen(uint8_t s)
 {
 	SPI.beginTransaction(SPI_ETHERNET_SETTINGS);
 	if (W5100.readSnSR(s) != SnSR::INIT) {
@@ -232,13 +232,13 @@ uint8_t EthernetClass::socketListen(uint8_t s)
 
 // establish a TCP connection in Active (client) mode.
 //
-void EthernetClass::socketConnect(uint8_t s, uint8_t * addr, uint16_t port)
+void EthernetClassv6::socketConnect(uint8_t s, uint8_t * addr, uint16_t port)
 {
 	// set destination IP
 	SPI.beginTransaction(SPI_ETHERNET_SETTINGS);
-	W5100.writeSnDIPR(s, addr);
+	W5100.writeSnDIP6R(s, addr);
 	W5100.writeSnDPORT(s, port);
-	W5100.execCmdSn(s, Sock_CONNECT);
+	W5100.execCmdSn(s, Sock_CONNECT6);
 	SPI.endTransaction();
 }
 
@@ -246,7 +246,7 @@ void EthernetClass::socketConnect(uint8_t s, uint8_t * addr, uint16_t port)
 
 // Gracefully disconnect a TCP connection.
 //
-void EthernetClass::socketDisconnect(uint8_t s)
+void EthernetClassv6::socketDisconnect(uint8_t s)
 {
 	SPI.beginTransaction(SPI_ETHERNET_SETTINGS);
 	W5100.execCmdSn(s, Sock_DISCON);
@@ -301,7 +301,7 @@ static void read_data(uint8_t s, uint16_t src, uint8_t *dst, uint16_t len)
 
 // Receive data.  Returns size, or -1 for no data, or 0 if connection closed
 //
-int EthernetClass::socketRecv(uint8_t s, uint8_t *buf, int16_t len)
+int EthernetClassv6::socketRecv(uint8_t s, uint8_t *buf, int16_t len)
 {
 	// Check how much data is available
 	int ret = state[s].RX_RSR;
@@ -347,7 +347,7 @@ int EthernetClass::socketRecv(uint8_t s, uint8_t *buf, int16_t len)
 	return ret;
 }
 
-uint16_t EthernetClass::socketRecvAvailable(uint8_t s)
+uint16_t EthernetClassv6::socketRecvAvailable(uint8_t s)
 {
 	uint16_t ret = state[s].RX_RSR;
 	if (ret == 0) {
@@ -363,7 +363,7 @@ uint16_t EthernetClass::socketRecvAvailable(uint8_t s)
 
 // get the first byte in the receive queue (no checking)
 //
-uint8_t EthernetClass::socketPeek(uint8_t s)
+uint8_t EthernetClassv6::socketPeek(uint8_t s)
 {
 	uint8_t b;
 	SPI.beginTransaction(SPI_ETHERNET_SETTINGS);
@@ -419,7 +419,7 @@ static void write_data(uint8_t s, uint16_t data_offset, const uint8_t *data, uin
  * @brief	This function used to send the data in TCP mode
  * @return	1 for success else 0.
  */
-uint16_t EthernetClass::socketSend(uint8_t s, const uint8_t * buf, uint16_t len)
+uint16_t EthernetClassv6::socketSend(uint8_t s, const uint8_t * buf, uint16_t len)
 {
 	uint8_t status=0;
 	uint16_t ret=0;
@@ -466,7 +466,7 @@ uint16_t EthernetClass::socketSend(uint8_t s, const uint8_t * buf, uint16_t len)
 	return ret;
 }
 
-uint16_t EthernetClass::socketSendAvailable(uint8_t s)
+uint16_t EthernetClassv6::socketSendAvailable(uint8_t s)
 {
 	uint8_t status=0;
 	uint16_t freesize=0;
@@ -480,7 +480,7 @@ uint16_t EthernetClass::socketSendAvailable(uint8_t s)
 	return 0;
 }
 
-uint16_t EthernetClass::socketBufferData(uint8_t s, uint16_t offset, const uint8_t* buf, uint16_t len)
+uint16_t EthernetClassv6::socketBufferData(uint8_t s, uint16_t offset, const uint8_t* buf, uint16_t len)
 {
 	//Serial.printf("  bufferData, offset=%d, len=%d\n", offset, len);
 	uint16_t ret =0;
@@ -496,23 +496,43 @@ uint16_t EthernetClass::socketBufferData(uint8_t s, uint16_t offset, const uint8
 	return ret;
 }
 
-bool EthernetClass::socketStartUDP(uint8_t s, uint8_t* addr, uint16_t port)
+bool EthernetClassv6::socketStartUDP(uint8_t s, uint8_t* addr, uint16_t port)
 {
-	if ( ((addr[0] == 0x00) && (addr[1] == 0x00) && (addr[2] == 0x00) && (addr[3] == 0x00)) ||
-	  ((port == 0x00)) ) {
+	uint8_t i;
+	uint32_t check_addr;
+	
+	for(i=0, check_addr=0; i<16; i++) {
+		check_addr += addr[i];
+	}
+
+	if(check_addr == 0x00 || (port == 0x00)) {
 		return false;
 	}
+	
 	SPI.beginTransaction(SPI_ETHERNET_SETTINGS);
-	W5100.writeSnDIPR(s, addr);
+	W5100.writeSnDIP6R(s, addr);
 	W5100.writeSnDPORT(s, port);
+#if 1
+	// 20190410
+	// Taylor
+	// Hop limit 0x80 / 128 as default
+	// If Hop limit too short, DNS Query Time Limited
+	W5100.writeSnTTL(s, 0x80);
+#else
+	// 20190319
+	// Taylor
+	// Hop limit 0x01
+	// Should be 0x01 ? Any case?
+	W5100.writeSnTTL(s, 0x01);
+#endif
 	SPI.endTransaction();
 	return true;
 }
 
-bool EthernetClass::socketSendUDP(uint8_t s)
+bool EthernetClassv6::socketSendUDP(uint8_t s)
 {
 	SPI.beginTransaction(SPI_ETHERNET_SETTINGS);
-	W5100.execCmdSn(s, Sock_SEND);
+	W5100.execCmdSn(s, Sock_SEND6);
 
 	/* +2008.01 bj */
 	while ( (W5100.readSnIR(s) & SnIR::SEND_OK) != SnIR::SEND_OK ) {

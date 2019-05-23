@@ -25,16 +25,23 @@
 byte mac[] = {
   0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED
 };
-IPAddress ip(192, 168, 1, 177);
+IP6Address ip(192, 168, 0, 4);
 
 // Enter the IP address of the server you're connecting to:
-IPAddress server(1, 1, 1, 1);
+byte ip6_server[] = {
+0x20, 0x01, 0x02, 0xb8,
+0x00, 0x10, 0xff, 0xff,
+0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x01, 0x00
+};
+
+IP6Address server(ip6_server, 16);
 
 // Initialize the Ethernet client library
 // with the IP address and port of the server
 // that you want to connect to (port 23 is default for telnet;
 // if you're using Processing's ChatServer, use port 10002):
-EthernetClient client;
+EthernetClientv6 client;
 
 void setup() {
   // You can use Ethernet.init(pin) to configure the CS pin
@@ -45,26 +52,37 @@ void setup() {
   //Ethernet.init(15);  // ESP8266 with Adafruit Featherwing Ethernet
   //Ethernet.init(33);  // ESP32 with Adafruit Featherwing Ethernet
 
-  // start the Ethernet connection:
-  Ethernet.begin(mac, ip);
-
   // Open serial communications and wait for port to open:
   Serial.begin(9600);
   while (!Serial) {
     ; // wait for serial port to connect. Needed for native USB port only
   }
 
+  // start the Ethernet connection:
+  Ethernetv6.begin(mac);
+
   // Check for Ethernet hardware present
-  if (Ethernet.hardwareStatus() == EthernetNoHardware) {
+  if (Ethernetv6.hardwareStatus() == EthernetNoHardware) {
     Serial.println("Ethernet shield was not found.  Sorry, can't run without hardware. :(");
     while (true) {
       delay(1); // do nothing, no point running without Ethernet hardware
     }
   }
-  while (Ethernet.linkStatus() == LinkOFF) {
+  while (Ethernetv6.linkStatus() == LinkOFF) {
     Serial.println("Ethernet cable is not connected.");
     delay(500);
   }
+
+  Serial.println("==================================================================");
+  Serial.println("Network Information");
+  Serial.println("==================================================================");
+  Serial.print("IPv4 ADR: "); Serial.println(Ethernetv6.localIP());
+  Serial.print("IPv6 LLA: "); Serial.println(Ethernetv6.linklocalAddress());
+  Serial.print("IPv6 GUA: "); Serial.println(Ethernetv6.globalunicastAddress());
+  Serial.print("IPv6 GAW: "); Serial.println(Ethernetv6.gateway6());
+  Serial.print("IPv6 SUB: "); Serial.println(Ethernetv6.subnetmask6());
+  Serial.print("IPv6 DNS: "); Serial.println(Ethernetv6.dnsServerIP());
+  Serial.println("==================================================================");
 
   // give the Ethernet shield a second to initialize:
   delay(1000);

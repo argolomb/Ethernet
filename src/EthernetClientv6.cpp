@@ -20,78 +20,78 @@
 
 #include <Arduino.h>
 #include "Ethernet.h"
-#include "Dns.h"
+#include "Dnsv6.h"
 #include "utility/w5100.h"
 
-int EthernetClient::connect(const char * host, uint16_t port)
+int EthernetClientv6::connect(const char * host, uint16_t port)
 {
-	DNSClient dns; // Look up the host first
-	IPAddress remote_addr;
+	DNSClientv6 dns; // Look up the host first
+	IP6Address remote_addr;
 
 	if (sockindex < MAX_SOCK_NUM) {
-		if (Ethernet.socketStatus(sockindex) != SnSR::CLOSED) {
-			Ethernet.socketDisconnect(sockindex); // TODO: should we call stop()?
+		if (Ethernetv6.socketStatus(sockindex) != SnSR::CLOSED) {
+			Ethernetv6.socketDisconnect(sockindex); // TODO: should we call stop()?
 		}
 		sockindex = MAX_SOCK_NUM;
 	}
-	dns.begin(Ethernet.dnsServerIP());
+	dns.begin(Ethernetv6.dnsServerIP());
 	if (!dns.getHostByName(host, remote_addr)) return 0; // TODO: use _timeout
 	return connect(remote_addr, port);
 }
 
-int EthernetClient::connect(IPAddress ip, uint16_t port)
+int EthernetClientv6::connect(IP6Address ip, uint16_t port)
 {
 	if (sockindex < MAX_SOCK_NUM) {
-		if (Ethernet.socketStatus(sockindex) != SnSR::CLOSED) {
-			Ethernet.socketDisconnect(sockindex); // TODO: should we call stop()?
+		if (Ethernetv6.socketStatus(sockindex) != SnSR::CLOSED) {
+			Ethernetv6.socketDisconnect(sockindex); // TODO: should we call stop()?
 		}
 		sockindex = MAX_SOCK_NUM;
 	}
 #if defined(ESP8266) || defined(ESP32)
-	if (ip == IPAddress((uint32_t)0) || ip == IPAddress(0xFFFFFFFFul)) return 0;
+	if (ip == IP6Address((uint32_t)0) || ip == IP6Address(0xFFFFFFFFul)) return 0;
 #else
-	if (ip == IPAddress(0ul) || ip == IPAddress(0xFFFFFFFFul)) return 0;
+	if (ip == IP6Address(0ul) || ip == IP6Address(0xFFFFFFFFul)) return 0;
 #endif
-	sockindex = Ethernet.socketBegin(SnMR::TCP, 0);
+	sockindex = Ethernetv6.socketBegin(SnMR::TCP6, 0);
 	if (sockindex >= MAX_SOCK_NUM) return 0;
-	Ethernet.socketConnect(sockindex, rawIPAddress(ip), port);
+	Ethernetv6.socketConnect(sockindex, rawIPAddress(ip), port);
 	uint32_t start = millis();
 	while (1) {
-		uint8_t stat = Ethernet.socketStatus(sockindex);
+		uint8_t stat = Ethernetv6.socketStatus(sockindex);
 		if (stat == SnSR::ESTABLISHED) return 1;
 		if (stat == SnSR::CLOSE_WAIT) return 1;
 		if (stat == SnSR::CLOSED) return 0;
 		if (millis() - start > _timeout) break;
 		delay(1);
 	}
-	Ethernet.socketClose(sockindex);
+	Ethernetv6.socketClose(sockindex);
 	sockindex = MAX_SOCK_NUM;
 	return 0;
 }
 
-int EthernetClient::availableForWrite(void)
+int EthernetClientv6::availableForWrite(void)
 {
 	if (sockindex >= MAX_SOCK_NUM) return 0;
-	return Ethernet.socketSendAvailable(sockindex);
+	return Ethernetv6.socketSendAvailable(sockindex);
 }
 
-size_t EthernetClient::write(uint8_t b)
+size_t EthernetClientv6::write(uint8_t b)
 {
 	return write(&b, 1);
 }
 
-size_t EthernetClient::write(const uint8_t *buf, size_t size)
+size_t EthernetClientv6::write(const uint8_t *buf, size_t size)
 {
 	if (sockindex >= MAX_SOCK_NUM) return 0;
-	if (Ethernet.socketSend(sockindex, buf, size)) return size;
+	if (Ethernetv6.socketSend(sockindex, buf, size)) return size;
 	setWriteError();
 	return 0;
 }
 
-int EthernetClient::available()
+int EthernetClientv6::available()
 {
 	if (sockindex >= MAX_SOCK_NUM) return 0;
-	return Ethernet.socketRecvAvailable(sockindex);
+	return Ethernetv6.socketRecvAvailable(sockindex);
 	// TODO: do the Wiznet chips automatically retransmit TCP ACK
 	// packets if they are lost by the network?  Someday this should
 	// be checked by a man-in-the-middle test which discards certain
@@ -100,46 +100,46 @@ int EthernetClient::available()
 	// command to cause the Wiznet chip to resend the ACK packet.
 }
 
-int EthernetClient::read(uint8_t *buf, size_t size)
+int EthernetClientv6::read(uint8_t *buf, size_t size)
 {
 	if (sockindex >= MAX_SOCK_NUM) return 0;
-	return Ethernet.socketRecv(sockindex, buf, size);
+	return Ethernetv6.socketRecv(sockindex, buf, size);
 }
 
-int EthernetClient::peek()
+int EthernetClientv6::peek()
 {
 	if (sockindex >= MAX_SOCK_NUM) return -1;
 	if (!available()) return -1;
-	return Ethernet.socketPeek(sockindex);
+	return Ethernetv6.socketPeek(sockindex);
 }
 
-int EthernetClient::read()
+int EthernetClientv6::read()
 {
 	uint8_t b;
-	if (Ethernet.socketRecv(sockindex, &b, 1) > 0) return b;
+	if (Ethernetv6.socketRecv(sockindex, &b, 1) > 0) return b;
 	return -1;
 }
 
-void EthernetClient::flush()
+void EthernetClientv6::flush()
 {
 	while (sockindex < MAX_SOCK_NUM) {
-		uint8_t stat = Ethernet.socketStatus(sockindex);
+		uint8_t stat = Ethernetv6.socketStatus(sockindex);
 		if (stat != SnSR::ESTABLISHED && stat != SnSR::CLOSE_WAIT) return;
-		if (Ethernet.socketSendAvailable(sockindex) >= W5100.SSIZE) return;
+		if (Ethernetv6.socketSendAvailable(sockindex) >= W5100.SSIZE) return;
 	}
 }
 
-void EthernetClient::stop()
+void EthernetClientv6::stop()
 {
 	if (sockindex >= MAX_SOCK_NUM) return;
 
 	// attempt to close the connection gracefully (send a FIN to other side)
-	Ethernet.socketDisconnect(sockindex);
+	Ethernetv6.socketDisconnect(sockindex);
 	unsigned long start = millis();
 
 	// wait up to a second for the connection to close
 	do {
-		if (Ethernet.socketStatus(sockindex) == SnSR::CLOSED) {
+		if (Ethernetv6.socketStatus(sockindex) == SnSR::CLOSED) {
 			sockindex = MAX_SOCK_NUM;
 			return; // exit the loop
 		}
@@ -147,28 +147,28 @@ void EthernetClient::stop()
 	} while (millis() - start < _timeout);
 
 	// if it hasn't closed, close it forcefully
-	Ethernet.socketClose(sockindex);
+	Ethernetv6.socketClose(sockindex);
 	sockindex = MAX_SOCK_NUM;
 }
 
-uint8_t EthernetClient::connected()
+uint8_t EthernetClientv6::connected()
 {
 	if (sockindex >= MAX_SOCK_NUM) return 0;
 
-	uint8_t s = Ethernet.socketStatus(sockindex);
+	uint8_t s = Ethernetv6.socketStatus(sockindex);
 	return !(s == SnSR::LISTEN || s == SnSR::CLOSED || s == SnSR::FIN_WAIT ||
 		(s == SnSR::CLOSE_WAIT && !available()));
 }
 
-uint8_t EthernetClient::status()
+uint8_t EthernetClientv6::status()
 {
 	if (sockindex >= MAX_SOCK_NUM) return SnSR::CLOSED;
-	return Ethernet.socketStatus(sockindex);
+	return Ethernetv6.socketStatus(sockindex);
 }
 
 // the next function allows us to use the client returned by
 // EthernetServer::available() as the condition in an if-statement.
-bool EthernetClient::operator==(const EthernetClient& rhs)
+bool EthernetClientv6::operator==(const EthernetClientv6& rhs)
 {
 	if (sockindex != rhs.sockindex) return false;
 	if (sockindex >= MAX_SOCK_NUM) return false;
@@ -178,7 +178,7 @@ bool EthernetClient::operator==(const EthernetClient& rhs)
 
 // https://github.com/per1234/EthernetMod
 // from: https://github.com/ntruchsess/Arduino-1/commit/937bce1a0bb2567f6d03b15df79525569377dabd
-uint16_t EthernetClient::localPort()
+uint16_t EthernetClientv6::localPort()
 {
 	if (sockindex >= MAX_SOCK_NUM) return 0;
 	uint16_t port;
@@ -190,19 +190,41 @@ uint16_t EthernetClient::localPort()
 
 // https://github.com/per1234/EthernetMod
 // returns the remote IP address: http://forum.arduino.cc/index.php?topic=82416.0
-IPAddress EthernetClient::remoteIP()
+IP6Address EthernetClientv6::remoteIP()
 {
-	if (sockindex >= MAX_SOCK_NUM) return IPAddress((uint32_t)0);
-	uint8_t remoteIParray[4];
+	if (sockindex >= MAX_SOCK_NUM) return IP6Address((uint32_t)0);
+	uint8_t remoteIParray[16];
 	SPI.beginTransaction(SPI_ETHERNET_SETTINGS);
-	W5100.readSnDIPR(sockindex, remoteIParray);
+
+	if(W5100.readSnMR(sockindex) == W6100_SnMR_TCPD) {
+
+		// TCP DUAL
+		if((W5100.readSnESR(sockindex) & W6100_SnESR_TCP6) == W6100_SnESR_TCP6)	{
+			W5100.readSnDIP6R(sockindex, remoteIParray);
+		} else {
+			W5100.readSnDIPR(sockindex, remoteIParray);
+			memset(&remoteIParray[4], 0, 16-4);
+		}
+
+	} else if(W5100.readSnMR(sockindex) == W6100_SnMR_TCP4) {
+
+		// TCP IPv4
+		W5100.readSnDIPR(sockindex, remoteIParray);
+		memset(&remoteIParray[4], 0, 16-4);
+
+	} else {
+		
+		// TCP IPv6
+		W5100.readSnDIP6R(sockindex, remoteIParray);
+	}
+
 	SPI.endTransaction();
-	return IPAddress(remoteIParray);
+	return IP6Address(remoteIParray);
 }
 
 // https://github.com/per1234/EthernetMod
 // from: https://github.com/ntruchsess/Arduino-1/commit/ca37de4ba4ecbdb941f14ac1fe7dd40f3008af75
-uint16_t EthernetClient::remotePort()
+uint16_t EthernetClientv6::remotePort()
 {
 	if (sockindex >= MAX_SOCK_NUM) return 0;
 	uint16_t port;
@@ -212,4 +234,36 @@ uint16_t EthernetClient::remotePort()
 	return port;
 }
 
+uint8_t EthernetClientv6::IPVis()
+{
+	uint8_t ipv;
+
+	if (sockindex >= MAX_SOCK_NUM) return IP6Address((uint32_t)0);
+	SPI.beginTransaction(SPI_ETHERNET_SETTINGS);
+
+	if(W5100.readSnMR(sockindex) == W6100_SnMR_TCPD) {
+
+		// TCP DUAL
+		if((W5100.readSnESR(sockindex) & W6100_SnESR_TCP6) == W6100_SnESR_TCP6)	{
+			// IPv6
+			ipv = 6;
+		} else {
+			// IPv4
+			ipv = 4;
+		}
+
+	} else if(W5100.readSnMR(sockindex) == W6100_SnMR_TCP4) {
+
+		// TCP IPv4
+		ipv = 4;
+
+	} else {
+		
+		// TCP IPv6
+		ipv = 6;
+	}
+
+	SPI.endTransaction();
+	return ipv;
+}
 

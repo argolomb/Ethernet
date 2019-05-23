@@ -69,12 +69,12 @@ public:
 
     virtual size_t printTo(Print& p) const;
 
-    friend class EthernetClass2;
-    friend class UDP2;
-    friend class Client2;
-    friend class Server2;
-    friend class DhcpClass2;
-    friend class DNSClient2;
+    friend class EthernetClassv6;
+    friend class UDPv6;
+    friend class Clientv6;
+    friend class Serverv6;
+    friend class DhcpClassv6;
+    friend class DNSClientv6;
 };
 
 //const IP6Address INADDR_NONE(0,0,0,0);

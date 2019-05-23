@@ -27,20 +27,67 @@
 // the sensor communicates using SPI, so include the library:
 #include <SPI.h>
 
+#define NO_BAROMETRIC
 
 // assign a MAC address for the Ethernet controller.
 // fill in your address here:
 byte mac[] = {
-  0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED
+0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
+
+byte ip6_lla[] = {
+0xfe, 0x80, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00,
+0x02, 0x00, 0xdc, 0xff,
+0xfe, 0x57, 0x57, 0x61
 };
-// assign an IP address for the controller:
-IPAddress ip(192, 168, 1, 20);
+
+byte ip6_gua[] = {
+0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00
+};
+
+byte ip6_sn6[] = {
+0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00
+};
+
+byte ip6_gw6[] = {
+0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00
+};
+
+// https://developers.google.com/speed/public-dns/docs/using
+// 2001:4860:4860::8888
+// 2001:4860:4860::8844
+
+byte ip6_dns6[] = {
+0x20, 0x01, 0x48, 0x60,
+0x48, 0x60, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x88, 0x88
+};
+
+IP6Address ip(192, 168, 0, 4);
+IP6Address myDns(192, 168, 0, 1);
+IP6Address gateway(192, 168, 0, 1);
+IP6Address subnet(255, 255, 0, 0);
+
+IP6Address lla(ip6_lla, 16);
+IP6Address gua(ip6_gua, 16);
+IP6Address sn6(ip6_sn6, 16);
+IP6Address gw6(ip6_gw6, 16);
 
 
 // Initialize the Ethernet server library
 // with the IP address and port you want to use
 // (port 80 is default for HTTP):
-EthernetServer server(80);
+EthernetServerv6 server(80);
 
 
 //Sensor's memory register addresses:
@@ -70,7 +117,7 @@ void setup() {
   SPI.begin();
 
   // start the Ethernet connection
-  Ethernet.begin(mac, ip);
+  Ethernetv6.begin(mac, ip, myDns, gateway, subnet, lla, gua, sn6, gw6);
 
   // Open serial communications and wait for port to open:
   Serial.begin(9600);
@@ -79,18 +126,32 @@ void setup() {
   }
 
   // Check for Ethernet hardware present
-  if (Ethernet.hardwareStatus() == EthernetNoHardware) {
+  if (Ethernetv6.hardwareStatus() == EthernetNoHardware) {
     Serial.println("Ethernet shield was not found.  Sorry, can't run without hardware. :(");
     while (true) {
       delay(1); // do nothing, no point running without Ethernet hardware
     }
   }
-  if (Ethernet.linkStatus() == LinkOFF) {
+  if (Ethernetv6.linkStatus() == LinkOFF) {
     Serial.println("Ethernet cable is not connected.");
   }
 
+  Serial.println("==================================================================");
+  Serial.println("Network Information");
+  Serial.println("==================================================================");
+  Serial.print("IPv4 ADR: "); Serial.println(Ethernetv6.localIP());
+  Serial.print("IPv6 LLA: "); Serial.println(Ethernetv6.linklocalAddress());
+  Serial.print("IPv6 GUA: "); Serial.println(Ethernetv6.globalunicastAddress());
+  Serial.print("IPv6 GAW: "); Serial.println(Ethernetv6.gateway6());
+  Serial.print("IPv6 SUB: "); Serial.println(Ethernetv6.subnetmask6());
+  Serial.print("IPv6 DNS: "); Serial.println(Ethernetv6.dnsServerIP());
+  Serial.println("==================================================================");
+
   // start listening for clients
-  server.begin();
+  server.begin(1);
+  Serial.println("Web Server address:");
+  Serial.print("IPv6 LLA: "); Serial.println(Ethernetv6.linklocalAddress());
+  Serial.print("IPv6 GUA: "); Serial.println(Ethernetv6.globalunicastAddress());
 
   // initalize the data ready and chip select pins:
   pinMode(dataReadyPin, INPUT);
@@ -106,7 +167,6 @@ void setup() {
 
   //Set the sensor to high resolution mode tp start readings:
   writeRegister(0x03, 0x0A);
-
 }
 
 void loop() {
@@ -132,7 +192,11 @@ void getData() {
   int tempData = readRegister(0x21, 2);
 
   // convert the temperature to celsius and display it:
+  #ifdef NO_BAROMETRIC
+  temperature++;
+  #else
   temperature = (float)tempData / 20.0;
+  #endif
 
   //Read the pressure data highest 3 bits:
   byte  pressureDataHigh = readRegister(0x1F, 1);
@@ -141,7 +205,15 @@ void getData() {
   //Read the pressure data lower 16 bits:
   unsigned int pressureDataLow = readRegister(0x20, 2);
   //combine the two parts into one 19-bit number:
+  #ifdef NO_BAROMETRIC
+  pressure++;
+  #else
   pressure = ((pressureDataHigh << 16) | pressureDataLow) / 4;
+  #endif
+
+  #ifdef NO_BAROMETRIC
+  Serial.println("No BarometricPressure!");
+  #endif
 
   Serial.print("Temperature: ");
   Serial.print(temperature);
@@ -152,7 +224,7 @@ void getData() {
 
 void listenForEthernetClients() {
   // listen for incoming clients
-  EthernetClient client = server.available();
+  EthernetClientv6 client = server.available();
   if (client) {
     Serial.println("Got a client");
     // an http request ends with a blank line

@@ -22,42 +22,59 @@
 #include "Ethernet.h"
 #include "utility/w5100.h"
 
-uint16_t EthernetServer::server_port[MAX_SOCK_NUM];
+uint16_t EthernetServerv6::server_port[MAX_SOCK_NUM];
 
 
-void EthernetServer::begin()
+void EthernetServerv6::begin(uint8_t ipv6)
 {
-	uint8_t sockindex = Ethernet.socketBegin(SnMR::TCP, _port);
+	if(ipv6 == 1)
+	{
+		PRINTSTR("IPv4, IPv6 Dual Begin");
+	}
+
+	uint8_t sockindex = Ethernetv6.socketBegin(SnMR::TCPD, _port);
 	if (sockindex < MAX_SOCK_NUM) {
-		if (Ethernet.socketListen(sockindex)) {
+		if (Ethernetv6.socketListen(sockindex)) {
 			server_port[sockindex] = _port;
 		} else {
-			Ethernet.socketDisconnect(sockindex);
+			Ethernetv6.socketDisconnect(sockindex);
 		}
 	}
 }
 
-EthernetClient EthernetServer::available()
+void EthernetServerv6::begin()
+{
+	uint8_t sockindex = Ethernetv6.socketBegin(SnMR::TCP6, _port);
+	if (sockindex < MAX_SOCK_NUM) {
+		if (Ethernetv6.socketListen(sockindex)) {
+			server_port[sockindex] = _port;
+		} else {
+			Ethernetv6.socketDisconnect(sockindex);
+		}
+	}
+}
+
+EthernetClientv6 EthernetServerv6::available()
 {
 	bool listening = false;
 	uint8_t sockindex = MAX_SOCK_NUM;
 	uint8_t chip, maxindex=MAX_SOCK_NUM;
 
 	chip = W5100.getChip();
-	if (!chip) return EthernetClient(MAX_SOCK_NUM);
+	if (!chip) return EthernetClientv6(MAX_SOCK_NUM);
 #if MAX_SOCK_NUM > 4
 	if (chip == 51) maxindex = 4; // W5100 chip never supports more than 4 sockets
 #endif
 	for (uint8_t i=0; i < maxindex; i++) {
 		if (server_port[i] == _port) {
-			uint8_t stat = Ethernet.socketStatus(i);
+			uint8_t stat = Ethernetv6.socketStatus(i);
 			if (stat == SnSR::ESTABLISHED || stat == SnSR::CLOSE_WAIT) {
-				if (Ethernet.socketRecvAvailable(i) > 0) {
+				if (Ethernetv6.socketRecvAvailable(i) > 0) {
 					sockindex = i;
 				} else {
 					// remote host closed connection, our end still open
 					if (stat == SnSR::CLOSE_WAIT) {
-						Ethernet.socketDisconnect(i);
+						Ethernetv6.socketDisconnect(i);
 						// status becomes LAST_ACK for short time
 					}
 				}
@@ -68,24 +85,30 @@ EthernetClient EthernetServer::available()
 			}
 		}
 	}
+	#if 1
+	// IPv4 IPv6
+	if (!listening) begin(1);
+	#else
+	// IPv6
 	if (!listening) begin();
-	return EthernetClient(sockindex);
+	#endif
+	return EthernetClientv6(sockindex);
 }
 
-EthernetClient EthernetServer::accept()
+EthernetClientv6 EthernetServerv6::accept()
 {
 	bool listening = false;
 	uint8_t sockindex = MAX_SOCK_NUM;
 	uint8_t chip, maxindex=MAX_SOCK_NUM;
 
 	chip = W5100.getChip();
-	if (!chip) return EthernetClient(MAX_SOCK_NUM);
+	if (!chip) return EthernetClientv6(MAX_SOCK_NUM);
 #if MAX_SOCK_NUM > 4
 	if (chip == 51) maxindex = 4; // W5100 chip never supports more than 4 sockets
 #endif
 	for (uint8_t i=0; i < maxindex; i++) {
 		if (server_port[i] == _port) {
-			uint8_t stat = Ethernet.socketStatus(i);
+			uint8_t stat = Ethernetv6.socketStatus(i);
 			if (sockindex == MAX_SOCK_NUM &&
 			  (stat == SnSR::ESTABLISHED || stat == SnSR::CLOSE_WAIT)) {
 				// Return the connected client even if no data received.
@@ -100,11 +123,20 @@ EthernetClient EthernetServer::accept()
 			}
 		}
 	}
+
+#if 0
+	// IPv6
 	if (!listening) begin();
-	return EthernetClient(sockindex);
+
+#else
+	// IPv4 IPv6 Dual
+
+	if (!listening) begin(1);
+#endif
+	return EthernetClientv6(sockindex);
 }
 
-EthernetServer::operator bool()
+EthernetServerv6::operator bool()
 {
 	uint8_t maxindex=MAX_SOCK_NUM;
 #if MAX_SOCK_NUM > 4
@@ -112,7 +144,7 @@ EthernetServer::operator bool()
 #endif
 	for (uint8_t i=0; i < maxindex; i++) {
 		if (server_port[i] == _port) {
-			if (Ethernet.socketStatus(i) == SnSR::LISTEN) {
+			if (Ethernetv6.socketStatus(i) == SnSR::LISTEN) {
 				return true; // server is listening for incoming clients
 			}
 		}
@@ -121,12 +153,12 @@ EthernetServer::operator bool()
 }
 
 #if 0
-void EthernetServer::statusreport()
+void EthernetServerv6::statusreport()
 {
 	Serial.printf("EthernetServer, port=%d\n", _port);
 	for (uint8_t i=0; i < MAX_SOCK_NUM; i++) {
 		uint16_t port = server_port[i];
-		uint8_t stat = Ethernet.socketStatus(i);
+		uint8_t stat = Ethernetv6.socketStatus(i);
 		const char *name;
 		switch (stat) {
 			case 0x00: name = "CLOSED"; break;
@@ -146,19 +178,19 @@ void EthernetServer::statusreport()
 			case 0x5F: name = "PPPOE"; break;
 			default: name = "???";
 		}
-		int avail = Ethernet.socketRecvAvailable(i);
+		int avail = Ethernetv6.socketRecvAvailable(i);
 		Serial.printf("  %d: port=%d, status=%s (0x%02X), avail=%d\n",
 			i, port, name, stat, avail);
 	}
 }
 #endif
 
-size_t EthernetServer::write(uint8_t b)
+size_t EthernetServerv6::write(uint8_t b)
 {
 	return write(&b, 1);
 }
 
-size_t EthernetServer::write(const uint8_t *buffer, size_t size)
+size_t EthernetServerv6::write(const uint8_t *buffer, size_t size)
 {
 	uint8_t chip, maxindex=MAX_SOCK_NUM;
 
@@ -170,8 +202,8 @@ size_t EthernetServer::write(const uint8_t *buffer, size_t size)
 	available();
 	for (uint8_t i=0; i < maxindex; i++) {
 		if (server_port[i] == _port) {
-			if (Ethernet.socketStatus(i) == SnSR::ESTABLISHED) {
-				Ethernet.socketSend(i, buffer, size);
+			if (Ethernetv6.socketStatus(i) == SnSR::ESTABLISHED) {
+				Ethernetv6.socketSend(i, buffer, size);
 			}
 		}
 	}

@@ -1,5 +1,3 @@
-#if 0
-
 // DHCP Library v0.3 - April 25, 2009
 // Author: Jordan Terrell - blog.jordanterrell.com
 
@@ -135,7 +133,5 @@ typedef struct _RIP_MSG_FIXED
 	uint8_t  giaddr[4];
 	uint8_t  chaddr[6];
 } RIP_MSG_FIXED;
-
-#endif
 
 #endif

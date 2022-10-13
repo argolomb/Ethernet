@@ -147,9 +147,11 @@ int EthernetClassv6::begin(uint8_t *mac, IP6Address ip, IP6Address dns, IP6Addre
 #endif
 
 	SPI.endTransaction();
+
+	return 0;
 }
 
-void EthernetClassv6::begin(uint8_t *mac, IP6Address ip, IP6Address dns, IP6Address gateway, IP6Address subnet, 
+int EthernetClassv6::begin(uint8_t *mac, IP6Address ip, IP6Address dns, IP6Address gateway, IP6Address subnet, 
 IP6Address lla, IP6Address gua, IP6Address sn6, IP6Address gw6)
 {
 //#error Ethernet.cpp 102
@@ -158,7 +160,7 @@ IP6Address lla, IP6Address gua, IP6Address sn6, IP6Address gw6)
 	IP6Address temp;
 	int i;
 
-	if (W5100.init() == 0) return;
+	if (W5100.init() == 0) return 0;
 	SPI.beginTransaction(SPI_ETHERNET_SETTINGS);
 	W5100.setMACAddress(mac);
 
@@ -187,6 +189,8 @@ IP6Address lla, IP6Address gua, IP6Address sn6, IP6Address gw6)
 #endif
 	SPI.endTransaction();
 	_dnsServerAddressv6 = dns;
+
+	return 1;
 }
 
 void EthernetClassv6::init(uint8_t sspin)

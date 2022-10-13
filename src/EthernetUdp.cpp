@@ -112,6 +112,7 @@ int EthernetUDP::parsePacket()
 		int ret=0;
 
 		if(W5100.getChip() == 61) {
+			uint8_t tmpIP[16] = {0,};
 			//read 2 header bytes and get one IPv4 or IPv6
 			ret = Ethernet.socketRecv(sockindex, tmpBuf, 2);
 			if(ret > 0) {
@@ -125,7 +126,8 @@ int EthernetUDP::parsePacket()
 
 					//read 16 header bytes and get IP and port from it
 					ret = Ethernet.socketRecv(sockindex, &tmpBuf[2], 18);
-					_remoteIP = &tmpBuf[2];					
+					memcpy(tmpIP, &tmpBuf[2], 16);
+					_remoteIP = tmpIP;
 					_remotePort = (tmpBuf[18]<<8) | tmpBuf[19];
 				} else {
 					// IPv4 UDP Recived
@@ -135,7 +137,8 @@ int EthernetUDP::parsePacket()
 
 					//read 6 header bytes and get IP and port from it
 					ret = Ethernet.socketRecv(sockindex, &tmpBuf[2], 6);
-					_remoteIP = &tmpBuf[2];
+					memcpy(tmpIP, &tmpBuf[2], 4);
+					_remoteIP = tmpIP;
 					_remotePort = (tmpBuf[6]<<8) | tmpBuf[7];
 				}
 

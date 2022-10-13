@@ -136,19 +136,24 @@ void EthernetClientv6::stop()
 	// attempt to close the connection gracefully (send a FIN to other side)
 	Ethernetv6.socketDisconnect(sockindex);
 	unsigned long start = millis();
+	int32_t close = 0;
 
 	// wait up to a second for the connection to close
 	do {
 		if (Ethernetv6.socketStatus(sockindex) == SnSR::CLOSED) {
-			sockindex = MAX_SOCK_NUM;
-			return; // exit the loop
+			close = 1;
+			break; // exit the loop
 		}
 		delay(1);
 	} while (millis() - start < _timeout);
 
 	// if it hasn't closed, close it forcefully
-	Ethernetv6.socketClose(sockindex);
+	if(close == 0)
+	{
+		Ethernetv6.socketClose(sockindex);
+	}
 	sockindex = MAX_SOCK_NUM;
+	
 }
 
 uint8_t EthernetClientv6::connected()
@@ -238,7 +243,10 @@ uint8_t EthernetClientv6::IPVis()
 {
 	uint8_t ipv;
 
+	// 20221012 taylor
+	#if 0
 	if (sockindex >= MAX_SOCK_NUM) return IP6Address((uint32_t)0);
+	#endif
 	SPI.beginTransaction(SPI_ETHERNET_SETTINGS);
 
 	if(W5100.readSnMR(sockindex) == W6100_SnMR_TCPD) {

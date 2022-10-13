@@ -129,7 +129,8 @@ int DhcpClassv6::request_DHCPV6_lease()
 
 			if (toggle)
 			{
-#ifdef DHCP6_DEBUG
+#if 0
+//#ifdef DHCP6_DEBUG
 				W5100.getGatewayIp(tmp);
 				PRINTSTR(getGatewayIp);
 				PRINTVAR_DECN(tmp, 4, i);
@@ -152,7 +153,8 @@ int DhcpClassv6::request_DHCPV6_lease()
 
 			if (toggle)
 			{
-#ifdef DHCP6_DEBUG
+#if 0
+//#ifdef DHCP6_DEBUG
 				W5100.getMACAddress(tmp);
 				PRINTSTR(getMACAddress);
 				PRINTVAR_HEXN(tmp, 6, i);

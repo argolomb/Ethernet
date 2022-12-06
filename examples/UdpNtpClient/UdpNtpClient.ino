@@ -47,7 +47,7 @@ void setup() {
   //Ethernet.init(20);  // Teensy++ 2.0
   //Ethernet.init(15);  // ESP8266 with Adafruit Featherwing Ethernet
   //Ethernet.init(33);  // ESP32 with Adafruit Featherwing Ethernet
-  //Ethernet.init(17);  // WIZnet W5100S-EVB-Pico W5500-EVB-Pico
+  //Ethernet.init(17);  // WIZnet W5100S-EVB-Pico W5500-EVB-Pico W6100-EVB-Pico
 
   // Open serial communications and wait for port to open:
   Serial.begin(9600);

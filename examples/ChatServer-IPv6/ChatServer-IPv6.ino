@@ -88,6 +88,7 @@ void setup() {
   //Ethernet.init(20);  // Teensy++ 2.0
   //Ethernet.init(15);  // ESP8266 with Adafruit Featherwing Ethernet
   //Ethernet.init(33);  // ESP32 with Adafruit Featherwing Ethernet
+  //Ethernet.init(17);  // WIZnet W6100-EVB-Pico
 
   // initialize the ethernet device
   Ethernetv6.begin(mac, ip, myDns, gateway, subnet, lla, gua, sn6, gw6);

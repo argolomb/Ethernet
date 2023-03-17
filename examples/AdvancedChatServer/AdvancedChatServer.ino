@@ -39,6 +39,10 @@ EthernetServer server(23);
 
 EthernetClient clients[8];
 
+#define SOCKET_BUFFER_MAX_SIZE 2048
+uint8_t socketBuffer[SOCKET_BUFFER_MAX_SIZE];  // socket buffer
+int received_DataLen;
+
 void setup() {
   // You can use Ethernet.init(pin) to configure the CS pin
   //Ethernet.init(10);  // Most Arduino shields
@@ -96,14 +100,15 @@ void loop() {
 
   // check for incoming data from all clients
   for (byte i=0; i < 8; i++) {
-    if (clients[i] && clients[i].available() > 0) {
-      // read bytes from a client
-      byte buffer[80];
-      int count = clients[i].read(buffer, 80);
-      // write the bytes to all other connected clients
+    // get available length to read
+    received_DataLen = clients[i].available();
+    if (clients[i] && received_DataLen > 0) {
+      // read the multiple bytes incoming from the client:
+      int count = clients[i].read(socketBuffer, received_DataLen);
+      // write the multiple bytes to all other connected clients
       for (byte j=0; j < 8; j++) {
         if (j != i && clients[j].connected()) {
-          clients[j].write(buffer, count);
+          clients[j].write(socketBuffer, count);
         }
       }
     }

@@ -36,6 +36,10 @@ IPAddress server(1, 1, 1, 1);
 // if you're using Processing's ChatServer, use port 10002):
 EthernetClient client;
 
+#define SOCKET_BUFFER_MAX_SIZE 2048
+uint8_t socketBuffer[SOCKET_BUFFER_MAX_SIZE];  // socket buffer
+int received_DataLen;
+
 void setup() {
   // You can use Ethernet.init(pin) to configure the CS pin
   //Ethernet.init(10);  // Most Arduino shields
@@ -83,17 +87,21 @@ void setup() {
 void loop() {
   // if there are incoming bytes available
   // from the server, read them and print them:
-  if (client.available()) {
-    char c = client.read();
-    Serial.print(c);
+  // get available length to read
+  received_DataLen = client.available();
+  if (received_DataLen > 0) {
+    // read the multiple bytes incoming from the client:
+    int count = client.read(socketBuffer, received_DataLen);
+    Serial.print(socketBuffer);
   }
 
   // as long as there are bytes in the serial queue,
   // read them and send them out the socket if it's open:
-  while (Serial.available() > 0) {
-    char inChar = Serial.read();
+  received_DataLen = Serial.available();
+  while (received_DataLen > 0) {
+    int count = Serial.read(socketBuffer, received_DataLen);
     if (client.connected()) {
-      client.print(inChar);
+      client.print(socketBuffer);
     }
   }
 

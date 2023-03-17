@@ -38,6 +38,10 @@ IPAddress subnet(255, 255, 0, 0);
 EthernetServer server(23);
 bool gotAMessage = false; // whether or not you got a message from the client yet
 
+#define SOCKET_BUFFER_MAX_SIZE 2048
+uint8_t socketBuffer[SOCKET_BUFFER_MAX_SIZE];  // socket buffer
+int received_DataLen;
+
 void setup() {
   // You can use Ethernet.init(pin) to configure the CS pin
   //Ethernet.init(10);  // Most Arduino shields
@@ -91,12 +95,14 @@ void loop() {
       gotAMessage = true;
     }
 
-    // read the bytes incoming from the client:
-    char thisChar = client.read();
-    // echo the bytes back to the client:
-    server.write(thisChar);
-    // echo the bytes to the server as well:
-    Serial.print(thisChar);
+    // get available length to read
+    received_DataLen = client.available();
+    // read the multiple bytes incoming from the client:
+    int count = client.read(socketBuffer, received_DataLen);
+    // echo the multiple bytes back to the client:
+    server.write(socketBuffer, count);
+    // echo the multiple bytes to the server as well:
+    Serial.write(socketBuffer, count);
     Ethernet.maintain();
   }
 }

@@ -26,7 +26,8 @@ IPAddress ip(192, 168, 1, 177);
 unsigned int localPort = 8888;      // local port to listen on
 
 // buffers for receiving and sending data
-char packetBuffer[UDP_TX_PACKET_MAX_SIZE];  // buffer to hold incoming packet,
+#define SOCKET_BUFFER_MAX_SIZE 2048
+char packetBuffer[SOCKET_BUFFER_MAX_SIZE];  // buffer to hold incoming packet,
 char ReplyBuffer[] = "acknowledged";        // a string to send back
 
 // An EthernetUDP instance to let us send and receive packets over UDP
@@ -84,13 +85,14 @@ void loop() {
     Serial.println(Udp.remotePort());
 
     // read the packet into packetBufffer
-    Udp.read(packetBuffer, UDP_TX_PACKET_MAX_SIZE);
+    Udp.read(packetBuffer, packetSize);
     Serial.println("Contents:");
-    Serial.println(packetBuffer);
+    Serial.write(packetBuffer, packetSize);
+    Serial.println("");
 
     // send a reply to the IP address and port that sent us the packet we received
     Udp.beginPacket(Udp.remoteIP(), Udp.remotePort());
-    Udp.write(ReplyBuffer);
+    Udp.write(ReplyBuffer, sizeof(ReplyBuffer));
     Udp.endPacket();
   }
   delay(10);

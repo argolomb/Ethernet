@@ -43,6 +43,10 @@ char server[] = "www.arduino.cc";  // also change the Host line in httpRequest()
 unsigned long lastConnectionTime = 0;           // last time you connected to the server, in milliseconds
 const unsigned long postingInterval = 10*1000;  // delay between updates, in milliseconds
 
+#define SOCKET_BUFFER_MAX_SIZE 2048
+uint8_t socketBuffer[SOCKET_BUFFER_MAX_SIZE];  // socket buffer
+int received_DataLen;
+
 void setup() {
   // You can use Ethernet.init(pin) to configure the CS pin
   //Ethernet.init(10);  // Most Arduino shields
@@ -89,9 +93,12 @@ void loop() {
   // if there's incoming data from the net connection.
   // send it out the serial port.  This is for debugging
   // purposes only:
-  if (client.available()) {
-    char c = client.read();
-    Serial.write(c);
+  // get available length to read
+  received_DataLen = client.available();
+  if (received_DataLen) {
+    // read the multiple bytes incoming from the client:
+    int count = client.read(socketBuffer, received_DataLen);
+    Serial.write(socketBuffer);
   }
 
   // if ten seconds have passed since your last connection,

@@ -86,23 +86,27 @@ void loop() {
         // so you can send a reply
         if (c == '\n' && currentLineIsBlank) {
           // send a standard http response header
-          client.println("HTTP/1.1 200 OK");
-          client.println("Content-Type: text/html");
-          client.println("Connection: close");  // the connection will be closed after completion of the response
-          client.println("Refresh: 5");  // refresh the page automatically every 5 sec
-          client.println();
-          client.println("<!DOCTYPE HTML>");
-          client.println("<html>");
+          String page;
+          page = "HTTP/1.1 200 OK\r\n";
+          page += "Content-Type: text/html\r\n";
+          page += "Connection: close\r\n";
+          page += "Refresh: 5\r\n";
+          page += "\r\n";
+          page += "<!DOCTYPE HTML>\r\n";
+          page += "<html>";
           // output the value of each analog input pin
           for (int analogChannel = 0; analogChannel < 6; analogChannel++) {
             int sensorReading = analogRead(analogChannel);
-            client.print("analog input ");
-            client.print(analogChannel);
-            client.print(" is ");
-            client.print(sensorReading);
-            client.println("<br />");
+            page += "analog input ";
+            page += analogChannel;
+            page += " is ";
+            page += sensorReading;
+            page += "<br />\r\n";
           }
-          client.println("</html>");
+          page += "</html>\r\n";
+          char page_array[512];
+          page.toCharArray(page_array, page.length()+1);
+          client.write(page_array, page.length());
           break;
         }
         if (c == '\n') {

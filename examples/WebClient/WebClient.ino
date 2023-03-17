@@ -40,6 +40,10 @@ unsigned long beginMicros, endMicros;
 unsigned long byteCount = 0;
 bool printWebData = true;  // set to false for better speed measurement
 
+#define SOCKET_BUFFER_MAX_SIZE 2048
+uint8_t socketBuffer[SOCKET_BUFFER_MAX_SIZE];  // socket buffer
+int received_DataLen;
+
 void setup() {
   // You can use Ethernet.init(pin) to configure the CS pin
   //Ethernet.init(10);  // Most Arduino shields
@@ -101,15 +105,13 @@ void setup() {
 void loop() {
   // if there are incoming bytes available
   // from the server, read them and print them:
-  int len = client.available();
-  if (len > 0) {
-    byte buffer[80];
-    if (len > 80) len = 80;
-    client.read(buffer, len);
+  received_DataLen = client.available();
+  if (received_DataLen > 0) {
+    client.read(socketBuffer, received_DataLen);
     if (printWebData) {
-      Serial.write(buffer, len); // show in the serial monitor (slows some boards)
+      Serial.write(socketBuffer, received_DataLen); // show in the serial monitor (slows some boards)
     }
-    byteCount = byteCount + len;
+    byteCount = byteCount + received_DataLen;
   }
 
   // if the server's disconnected, stop the client:

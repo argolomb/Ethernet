@@ -83,10 +83,13 @@ void EthernetClass::begin(uint8_t *mac, IPAddress ip, IPAddress dns, IPAddress g
 	if (W5100.init() == 0) return;
 	SPI.beginTransaction(SPI_ETHERNET_SETTINGS);
 	W5100.setMACAddress(mac);
+	Serial.print("Begin");
+	Serial.print(ARDUINO);
 #if ARDUINO > 106 || TEENSYDUINO > 121
-	W5100.setIPAddress(ip._address.bytes);
+	W5100.setIPAddress(ip.raw_address());
 	W5100.setGatewayIp(gateway._address.bytes);
 	W5100.setSubnetMask(subnet._address.bytes);
+
 #else
 	W5100.setIPAddress(ip._address);
 	W5100.setGatewayIp(gateway._address);
